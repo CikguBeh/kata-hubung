@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuiz Kata Hubung: Dan, Atau, Tetapi, Sambil</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #f8fafc;
+            --accent: #f59e0b;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --text: #1e293b;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #e2e8f0;
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 15px;
+        }
+
+        .quiz-card {
+            background: white;
+            width: 100%;
+            max-width: 550px;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .header-bar {
+            background: var(--primary);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        h2 { margin: 0; font-size: 1.4rem; }
+
+        .question-box {
+            font-size: 1.2rem;
+            margin: 25px 0;
+            line-height: 1.6;
+            min-height: 60px;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn-opt {
+            background: var(--secondary);
+            border: 2px solid #cbd5e1;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-opt:hover {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+
+        .btn-opt.correct {
+            background-color: var(--success);
+            color: white;
+            border-color: var(--success);
+        }
+
+        .btn-opt.wrong {
+            background-color: var(--danger);
+            color: white;
+            border-color: var(--danger);
+        }
+
+        .next-btn {
+            margin-top: 25px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            display: none;
+        }
+
+        .score-board {
+            display: none;
+        }
+
+        .progress {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-card">
+    <div class="header-bar">
+        <h2>Kuiz Kata Hubung</h2>
+    </div>
+
+    <div id="quiz-area">
+        <div class="progress" id="progress">Soalan 1 daripada 10</div>
+        <div class="question-box" id="question">Sila tunggu, soalan sedang dimuatkan...</div>
+        
+        <div class="options-grid" id="options">
+            </div>
+
+        <button class="next-btn" id="btn-next" onclick="nextQuestion()">Soalan Seterusnya</button>
+    </div>
+
+    <div id="score-area" class="score-board">
+        <h3>Tahniah! Kuiz Selesai</h3>
+        <p style="font-size: 1.5rem;">Skor Anda: <span id="final-score">0</span> / 10</p>
+        <button class="next-btn" style="display:inline-block;" onclick="location.reload()">Cuba Lagi</button>
+    </div>
+</div>
+
+<script>
+    const data = [
+        { q: "Ali _____ Abu pergi ke sekolah bersama-sama.", a: ["dan", "atau", "tetapi", "sambil"], c: 0 },
+        { q: "Kamu mahu minum air teh _____ kopi?", a: ["dan", "atau", "tetapi", "sambil"], c: 1 },
+        { q: "Abang membaca buku _____ mendengar muzik.", a: ["dan", "atau", "tetapi", "sambil"], c: 3 },
+        { q: "Rumah itu besar _____ kotor.", a: ["dan", "atau", "tetapi", "sambil"], c: 2 },
+        { q: "Ibu memotong sayur _____ berbual dengan ayah.", a: ["dan", "atau", "tetapi", "sambil"], c: 3 },
+        { q: "Adik suka makan ayam goreng _____ nasi lemak.", a: ["dan", "atau", "tetapi", "sambil"], c: 0 },
+        { q: "Badan dia kecil _____ dia sangat kuat.", a: ["dan", "atau", "tetapi", "sambil"], c: 2 },
+        { q: "Siti mencuci pinggan _____ menyanyi kecil.", a: ["dan", "atau", "tetapi", "sambil"], c: 3 },
+        { q: "Awak suka warna merah _____ biru?", a: ["dan", "atau", "tetapi", "sambil"], c: 1 },
+        { q: "Kasut itu cantik _____ harganya mahal.", a: ["dan", "atau", "tetapi", "sambil"], c: 2 }
+    ];
+
+    let currentIdx = 0;
+    let score = 0;
+    let canClick = true;
+
+    function loadQuestion() {
+        canClick = true;
+        const current = data[currentIdx];
+        document.getElementById('progress').innerText = `Soalan ${currentIdx + 1} daripada ${data.length}`;
+        document.getElementById('question').innerText = current.q;
+        document.getElementById('btn-next').style.display = 'none';
+        
+        const optionsDiv = document.getElementById('options');
+        optionsDiv.innerHTML = '';
+
+        current.a.forEach((opt, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-opt';
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(index, btn);
+            optionsDiv.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(idx, btn) {
+        if (!canClick) return;
+        canClick = false;
+
+        const correctIdx = data[currentIdx].c;
+        const allBtns = document.querySelectorAll('.btn-opt');
+
+        if (idx === correctIdx) {
+            btn.classList.add('correct');
+            score++;
+        } else {
+            btn.classList.add('wrong');
+            allBtns[correctIdx].classList.add('correct');
+        }
+
+        document.getElementById('btn-next').style.display = 'inline-block';
+    }
+
+    function nextQuestion() {
+        currentIdx++;
+        if (currentIdx < data.length) {
+            loadQuestion();
+        } else {
+            showScore();
+        }
+    }
+
+    function showScore() {
+        document.getElementById('quiz-area').style.display = 'none';
+        document.getElementById('score-area').style.display = 'block';
+        document.getElementById('final-score').innerText = score;
+    }
+
+    // Mula kuiz
+    loadQuestion();
+</script>
+
+</body>
+</html>
